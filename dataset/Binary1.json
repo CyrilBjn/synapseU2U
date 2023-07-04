@@ -1,0 +1,19 @@
+{
+	"name": "Binary1",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "cb-synpaseworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "RAW/BABS/SmallFiles",
+				"fileSystem": "datalake"
+			}
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}
