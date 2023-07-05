@@ -1,0 +1,101 @@
+{
+	"name": "df_TripsPerStation",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"linkedService": {
+						"referenceName": "ls_BABSData",
+						"type": "LinkedServiceReference"
+					},
+					"name": "SourceTripData",
+					"description": "Import data from ls_BABSData"
+				}
+			],
+			"sinks": [
+				{
+					"linkedService": {
+						"referenceName": "cb-synpaseworkspace-WorkspaceDefaultStorage",
+						"type": "LinkedServiceReference"
+					},
+					"name": "AggDestination"
+				}
+			],
+			"transformations": [
+				{
+					"name": "GroupOnStartStation",
+					"description": "Aggregating data by 'Start Station' producing columns 'Trip Count, Average Duration'"
+				},
+				{
+					"name": "GroupOnEndStation",
+					"description": "Aggregating data by 'End Station' producing columns 'Trip Count, Average Duration'"
+				},
+				{
+					"name": "JoinOnStartEndStation"
+				},
+				{
+					"name": "select1"
+				}
+			],
+			"scriptLines": [
+				"source(output(",
+				"          {Trip ID} as integer,",
+				"          Duration as short,",
+				"          {Start Date} as timestamp 'MM/dd/yyyy HH:mm',",
+				"          {Start Station} as string,",
+				"          {Start Terminal} as short,",
+				"          {End Date} as timestamp 'MM/dd/yyyy HH:mm',",
+				"          {End Station} as string,",
+				"          {End Terminal} as short,",
+				"          {Bike #} as short,",
+				"          {Subscriber Type} as string,",
+				"          {Zip Code} as string",
+				"     ),",
+				"     useSchema: false,",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false,",
+				"     format: 'delimited',",
+				"     container: 'u2ulabs',",
+				"     folderPath: 'data/babs',",
+				"     fileName: '201508_trip_data.csv',",
+				"     columnDelimiter: ',',",
+				"     escapeChar: '\\\\',",
+				"     quoteChar: '\\\"',",
+				"     columnNamesAsHeader: true) ~> SourceTripData",
+				"SourceTripData aggregate(groupBy({Start Station}),",
+				"     {Trip Count} = count({Trip ID}),",
+				"          {Average Duration} = avg(Duration)) ~> GroupOnStartStation",
+				"SourceTripData aggregate(groupBy({End Station}),",
+				"     {Trip Count} = count({Trip ID}),",
+				"          {Average Duration} = avg(Duration)) ~> GroupOnEndStation",
+				"GroupOnEndStation, GroupOnStartStation join({End Station} == {Start Station},",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> JoinOnStartEndStation",
+				"JoinOnStartEndStation select(mapColumn(",
+				"          Station = {Start Station},",
+				"          TripsEndedHere = GroupOnEndStation@{Trip Count},",
+				"          AvgDurationEnding = GroupOnEndStation@{Average Duration},",
+				"          TripsStartedHere = GroupOnStartStation@{Trip Count},",
+				"          AbgDurationStarting = GroupOnStartStation@{Average Duration}",
+				"     ),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     format: 'parquet',",
+				"     fileSystem: 'datalake',",
+				"     folderPath: 'CURATED/StationAgg',",
+				"     compressionCodec: 'snappy',",
+				"     umask: 0022,",
+				"     preCommands: [],",
+				"     postCommands: [],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> AggDestination"
+			]
+		}
+	}
+}

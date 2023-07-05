@@ -1,0 +1,21 @@
+{
+	"name": "DestinationDataset_syr",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "cb-synpaseworkspace-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "Parquet",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"folderPath": "RAW/BABS/Station",
+				"fileSystem": "datalake"
+			},
+			"compressionCodec": "snappy"
+		},
+		"schema": []
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

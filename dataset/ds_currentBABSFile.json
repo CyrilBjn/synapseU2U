@@ -1,0 +1,28 @@
+{
+	"name": "ds_currentBABSFile",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "ls_BABSData",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"FileName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"type": "Binary",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"fileName": {
+					"value": "@dataset().FileName",
+					"type": "Expression"
+				},
+				"folderPath": "data/babs",
+				"container": "u2ulabs"
+			}
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}
