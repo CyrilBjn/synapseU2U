@@ -1,0 +1,20 @@
+{
+	"name": "Azure Synapse Analytics Managed SQL Pools",
+	"properties": {
+		"folder": {
+			"name": "BABS"
+		},
+		"content": {
+			"query": "CREATE MASTER KEY;",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

@@ -1,0 +1,20 @@
+{
+	"name": "Data Warehouse LAB script",
+	"properties": {
+		"folder": {
+			"name": "BABS"
+		},
+		"content": {
+			"query": "CREATE MASTER KEY;\n\nCREATE DATABASE SCOPED CREDENTIAL MyCred\nWITH IDENTITY = 'SHARED ACCESS SIGNATURE',\nSECRET = 'sp=rcwl&st=2023-07-06T12:05:19Z&se=2023-07-06T20:05:19Z&spr=https&sv=2022-11-02&sr=c&sig=EYFfx3giyjjTyaj%2BIL6kvlVvKeZMjHWbPSvOKPTWIDg%3D';\n\nCREATE EXTERNAL DATA SOURCE babsfolder \nWITH\n( TYPE = HADOOP,\nLOCATION\n='wasbs://u2ulabs@cbu2ubabssourcedata.blob.core.windows.net',\nCREDENTIAL = MyCred);\n\nCREATE EXTERNAL FILE FORMAT text_file_format_csv\nWITH\n( FORMAT_TYPE = DELIMITEDTEXT,\nFORMAT_OPTIONS\n(\nFIELD_TERMINATOR =',',\nUSE_TYPE_DEFAULT = TRUE,\nDATE_FORMAT = 'MM/dd/yyyy HH:mm',\nFIRST_ROW = 2 --skip header row\n)\n)\n\nCREATE SCHEMA ext;\nGO\nCREATE EXTERNAL TABLE ext.trips\n(\nTrip_ID INT NOT NULL,\nDuration INT NOT NULL,\nStart_Date DATETIME2(7) NOT NULL,\nStart_Station NVARCHAR(50) NOT NULL,\nStart_Terminal INT NOT NULL,\nEnd_Date DATETIME2(7) NOT NULL,\nEnd_Station NVARCHAR(50) NOT NULL,\nEnd_Terminal INT NOT NULL,\nBike__ INT NOT NULL,\nSubscriber_Type NVARCHAR(50) NOT NULL,\nZip_Code NVARCHAR(50) NULL\n) WITH\n(\nLOCATION = '/data/babs/201508_trip_data.csv',\nDATA_SOURCE = babsfolder,\nFILE_FORMAT = text_file_format_csv\n);\n\nSELECT count(*) as NumberOfTrips\n, AVG(Duration) as AvgDuration\n, Subscriber_type\nFROM ext.trips\nGROUP BY Subscriber_type\n\n\nCREATE EXTERNAL FILE FORMAT text_file_format_csvgz\nWITH\n( FORMAT_TYPE = DELIMITEDTEXT,\nFORMAT_OPTIONS\n(\nFIELD_TERMINATOR =',',\nUSE_TYPE_DEFAULT = TRUE,\nDATE_FORMAT = 'MM/dd/yyyy HH:mm:ss',\nFIRST_ROW = 2 --skip header row\n)\n)\n\n\n\nCREATE EXTERNAL TABLE [ext].[babs_status](\n[station_id] [int] NULL,\n[bikes_available] [int] NULL,\n[docks_available] [int] NULL,\n[time] [datetime] NULL\n) WITH\n(\nLOCATION = '/data/babs/status_data_2015.csv.gz',\nDATA_SOURCE = babsfolder,\nFILE_FORMAT = text_file_format_csvgz\n);\n\nSELECT station_id, COUNT(*) as EmptySlots\nFROM [ext].[babs_status]\nWHERE [bikes_available] = 0\nGROUP BY station_id\nORDER BY 2 desc;\n\nCREATE TABLE dbo.babs_status\nWITH (DISTRIBUTION = ROUND_ROBIN)\nAS SELECT * FROM [ext].[babs_status];\n\nDROP EXTERNAL TABLE ext.babs_status;\nCREATE EXTERNAL TABLE [ext].[babs_status](\n[station_id] [int] NULL,\n[bikes_available] [int] NULL,\n[docks_available] [int] NULL,\n[time] [datetime] NULL\n) WITH\n(\nLOCATION = '/data/babs/status_data_2015.csv.gz',\nDATA_SOURCE = babsfolder,\nFILE_FORMAT = text_file_format_csvgz,\nREJECT_TYPE = value ,\nREJECT_VALUE = 100,\nREJECTED_ROW_LOCATION = '/data/babs/REJECT_Directory'\n);\n\nCREATE TABLE dbo.babs_status\nWITH (DISTRIBUTION = ROUND_ROBIN)\nAS SELECT * FROM ext.babs_status;\n\nCREATE EXTERNAL FILE FORMAT text_file_format\nWITH\n( FORMAT_TYPE = DELIMITEDTEXT,\nFORMAT_OPTIONS\n(\nFIELD_TERMINATOR =',',\nUSE_TYPE_DEFAULT = TRUE,\nSTRING_DELIMITER = '\"',\nFIRST_ROW = 2 --skip header row\n)\n)\n\nselect * from sys.pdw_nodes_column_store_row_groups;\n\nselect distribution_id, sum(total_rows), sum(total_rows) * 100.0 / (SELECT\nsum(total_rows) from sys.pdw_nodes_column_store_row_groups)\nfrom sys.pdw_nodes_column_store_row_groups\ngroup by distribution_id\norder by 2 desc;\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "BabsPool",
+				"poolName": "BabsPool"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
