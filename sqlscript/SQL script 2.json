@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 2",
+	"properties": {
+		"content": {
+			"query": "DROP EXTERNAL TABLE dbo.trip_data;\nDROP EXTERNAL DATA SOURCE [datalake_cbrau2usynapsestorage_dfs_core_windows_net];\nDROP EXTERNAL FILE FORMAT [SynapseDelimitedTextFormat];\n\n--Step 1: Create master key for the database\nIF NOT EXISTS(SELECT * FROM sys.symmetric_keys WHERE name LIKE '%DatabaseMasterKey%')\n    CREATE MASTER KEY; \nGO\n\n--Step 2: Create Database Scoped Credentials to access storage account\nIF NOT EXISTS(SELECT * FROM sys.database_credentials WHERE name = 'BabsData')\n    CREATE DATABASE SCOPED CREDENTIAL [BabsData]\nWITH IDENTITY='SHARED ACCESS SIGNATURE',  \nSECRET = 'sp=rcwdl&st=2023-07-06T07:53:13Z&se=2023-07-06T15:53:13Z&spr=https&sv=2022-11-02&sr=c&sig=JpzOPXZyGbHvxIOi3Hke%2Ba5%2F1Dp2dp%2B3pHxajZY70%2Bo%3D'\nGO\n\n--Step 3: \nCREATE EXTERNAL DATA SOURCE SqlOnDemandDemo WITH (\n  LOCATION = 'abfss://datalake@cbrau2usynapsestorage.dfs.core.windows.net',\n  CREDENTIAL = BabsData\n);\n\n-- Step 4: Create External File Format\nIF NOT EXISTS (SELECT * FROM sys.external_file_formats WHERE name = 'SynapseDelimitedTextFormat') \n    CREATE EXTERNAL FILE FORMAT [SynapseDelimitedTextFormat] \n    WITH ( FORMAT_TYPE = DELIMITEDTEXT ,\n           FORMAT_OPTIONS (\n             FIELD_TERMINATOR = ',',\n             USE_TYPE_DEFAULT = FALSE,\n             FIRST_ROW = 2\n            ))\nGO\n\n\nCREATE EXTERNAL TABLE dbo.trip_data (\n    [Trip ID] bigint,\n    [Duration] bigint,\n    [Start Date] nvarchar(4000),\n    [Start Station] nvarchar(4000),\n    [Start Terminal] bigint,\n    [End Date] nvarchar(4000),\n    [End Station] nvarchar(4000),\n    [End Terminal] bigint,\n    [Bike #] bigint,\n    [Subscriber Type] nvarchar(4000),\n    [Zip Code] bigint\n    )\n    WITH (\n    LOCATION = 'RAW/BABS/SmallFiles/201508_trip_data.csv',\n    DATA_SOURCE = [SqlOnDemandDemo],\n    FILE_FORMAT = [SynapseDelimitedTextFormat]\n    );\nGO\n\nSELECT count(*) FROM dbo.trip_data;\n\nSELECT TOP(20) [Start Station], AVG(Duration)\nFROM dbo.trip_data\nGROUP BY [Start Station]\nORDER BY AVG(Duration) DESC;\n\n\nCREATE EXTERNAL TABLE dbo.trip_data_export\n    WITH (\n            LOCATION = 'data/export/avg_duration.csv',\n            DATA_SOURCE = [SqlOnDemandDemo],\n            FILE_FORMAT = [SynapseDelimitedTextFormat]\n    )\n    AS\nSELECT [Start Station], AVG(Duration) AS avg_duration\nFROM dbo.trip_data\nGROUP BY [Start Station];\n",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "babs",
+				"poolName": "Built-in"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}
