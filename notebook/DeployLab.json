@@ -1,0 +1,210 @@
+{
+	"name": "DeployLab",
+	"properties": {
+		"nbformat": 4,
+		"nbformat_minor": 2,
+		"sessionProperties": {
+			"driverMemory": "28g",
+			"driverCores": 4,
+			"executorMemory": "28g",
+			"executorCores": 4,
+			"numExecutors": 2,
+			"conf": {
+				"spark.dynamicAllocation.enabled": "false",
+				"spark.dynamicAllocation.minExecutors": "2",
+				"spark.dynamicAllocation.maxExecutors": "2",
+				"spark.autotune.trackingId": "accb5799-141e-4b43-a1c2-0bdbcabb0885"
+			}
+		},
+		"metadata": {
+			"saveOutput": true,
+			"enableDebugMode": false,
+			"kernelspec": {
+				"name": "synapse_pyspark",
+				"display_name": "python"
+			},
+			"language_info": {
+				"name": "python"
+			},
+			"sessionKeepAliveTimeout": 30
+		},
+		"cells": [
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "813f3758-d14d-4bcf-8eae-a81786dc2556"
+					}
+				},
+				"source": [
+					"# Azure Databricks deployment"
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "82c5acf8-d7b4-49bb-8af9-cb2fad032762"
+					}
+				},
+				"source": [
+					"This lab starts with a few cells to load data and do some basic visualization. Just run the cells below till you find further instructions."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "8588d0bb-3f26-486c-9446-c2adefa9d2b2"
+					}
+				},
+				"source": [
+					"df = spark.read.csv(\"/databricks-datasets/wine-quality/winequality-red.csv\", header=\"true\", inferSchema\n",
+					"                    = \"true\", sep = \";\")\n",
+					"for col in df.columns:\n",
+					"  df = df.withColumnRenamed(col,col.replace(\" \", \"_\"))\n",
+					"df.createOrReplaceTempView(\"wine\")"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "9a62b999-6aed-449c-82ba-3098c2119f8c"
+					}
+				},
+				"source": [
+					"df.corr(\"quality\", \"alcohol\")"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "c0459a50-e845-4448-ab54-7eaa8f9db4dd"
+					}
+				},
+				"source": [
+					"%sql\n",
+					"SELECT * FROM wine"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "82340eae-b17a-44a4-a28c-22b2b5bb24bf"
+					}
+				},
+				"source": [
+					"%sql\n",
+					"SELECT quality, avg(alcohol) FROM wine GROUP BY quality ORDER BY quality"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "8930162e-e2d2-4d5f-a3f5-e45788d56818"
+					}
+				},
+				"source": [
+					"As we expected: more alcohol leads to better wine quality ðŸ˜Š"
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "48ddd9bd-71b3-4c12-b5c5-de7c69815bc2"
+					}
+				},
+				"source": [
+					"## Lab: create dashboard\n",
+					"In the view menu create a dashboard out of this Notebook. Rearrange and resize the cells as you please. Remove a cell from the dashboard, then return back to notebook view (via the view menu): is the cell still in the notebook?\n",
+					"Then add a new cell to the notebook with another chart (e.g. copy the above query and change the column over which you create an averaqe). Does this new cell show up in the dashboard? And what if you create a new dashboard, does it show up there?"
+				]
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "5731056c-ff11-4669-bee3-c40913e9e28e"
+					}
+				},
+				"source": [
+					"## Lab: widgets\n",
+					"\n",
+					"Run the cell below. Notice the code has a hardcoded value of 4 in there. Create a widget which asks for this value and copy the cell and modify it such that it uses the widget. Optionally see how this behaves in a dashboard."
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "616b263c-c32e-4764-896b-5f826b6f1481"
+					}
+				},
+				"source": [
+					"display(df.where(df[\"quality\"] > 4).groupby(\"quality\").avg(\"Alcohol\"))"
+				],
+				"execution_count": 0
+			},
+			{
+				"cell_type": "markdown",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "679e3a8d-ccbf-45a2-95a6-84466f5af061"
+					}
+				},
+				"source": [
+					"## Lab: jobs\n",
+					"1. Click the Schedule button in the upper right corner to convert this Notebook into a Job. Schedule it to run very unfrequent.\n",
+					"2. Then visit the Jobs tab to see the job definition (it can take a few seconds before you see it)\n",
+					"1. Inspect the job. Notice it uses a special Job cluster, but we can control the setting if needed\n",
+					"1. Delete the Job after inspection to reduce cost"
+				]
+			},
+			{
+				"cell_type": "code",
+				"metadata": {
+					"application/vnd.databricks.v1+cell": {
+						"title": "",
+						"showTitle": false,
+						"nuid": "1277b51a-d95b-4010-bacd-580bc613b910"
+					}
+				},
+				"source": [
+					""
+				],
+				"execution_count": 0
+			}
+		]
+	}
+}
